@@ -148,30 +148,35 @@ import audioop
 import subprocess
 
 def test_audio(card_number):
-    print("Testing audio playback using espeak...")
+    print("Testing audio playback using Piper TTS...")
 
     try:
-        # Generate an audio file using espeak
-        espeak_text = "Audio playback test successful. This is a test of the WM8960 audio HAT."
-        espeak_output_file = "espeak_test.wav"
+        # Generate an audio file using Piper TTS
+        piper_text = "Audio playback test successful. This is a test of the WM8960 audio HAT using Piper TTS."
+        piper_output_file = "piper_test.wav"
+        
+        # Specify the paths to the model and config files
+        model_path = "/home/pi/Chat_Robot/en_GB-northern_english_male-medium.onnx"
+        config_path = "/home/pi/Chat_Robot/en_GB-northern_english_male-medium.onnx.json"
         
         subprocess.check_call([
-            "espeak",
-            espeak_text,
-            "--stdout",
-            "-w", espeak_output_file  # Write output to a WAV file
+            "piper",
+            "--model", model_path,
+            "--config", config_path,
+            "--text", piper_text,
+            "--output_file", piper_output_file
         ])
 
         # Play the generated audio file through the WM8960
         subprocess.check_call([
             "aplay",
             "-D", "plughw:{}".format(card_number),
-            espeak_output_file
+            piper_output_file
         ])
         
-        print("Audio test passed using espeak.")
+        print("Audio test passed using Piper TTS.")
         
-        # Record audio from the microphone at the same quality as espeak output
+        # Record audio from the microphone at the same quality
         mic_test_file = "mic_test.wav"
         print("Recording audio from microphone...")
 
@@ -196,7 +201,7 @@ def test_audio(card_number):
         print("Microphone test completed.")
         
     except subprocess.CalledProcessError as e:
-        print("Audio test failed with error: ", e)
+        print("Audio test failed with error:", e)
 
 def modify_install_sh(script_path):
     print(f"Modifying {script_path} to use correct folder paths...")
@@ -320,6 +325,7 @@ def find_hc05_address():
             return address
     print("HC-05 module not found.")
     return None
+
 def pair_with_hc05(address, passkey):
     try:
         print(f"Trying to pair with HC-05 using passkey: {passkey}")
@@ -345,6 +351,7 @@ def pair_with_hc05(address, passkey):
     except subprocess.CalledProcessError:
         print(f"Failed to pair with HC-05 using passkey: {passkey}")
         return False
+
 def setup_bluetooth():
     print("Setting up Bluetooth...")
     subprocess.check_call(["sudo", "systemctl", "start", "bluetooth.service"])
@@ -358,10 +365,6 @@ def setup_bluetooth():
     else:
         print("HC-05 module not found. Please ensure the device is in pairing mode and try again.")
 
-    
-    
-    
-    
 def main():
     parser = argparse.ArgumentParser(description='Setup script for Raspberry Pi project.')
     parser.add_argument('--mode', type=str, choices=['install', 'test'], required=True,
@@ -384,11 +387,11 @@ def main():
         install_apt_package("libatlas-base-dev")  # Required for NumPy
         install_apt_package("libopencv-dev")      # OpenCV dependencies and OpenCV installation
         install_apt_package("python3-opencv")     # OpenCV Python bindings
-        install_apt_package("libi2c-dev")         # For SMBus/I2C (corrected package name)
+        install_apt_package("libi2c-dev")         # For SMBus/I2C
         install_apt_package("i2c-tools")
         install_apt_package("flac")
         install_apt_package("expect")             # Required for the interactive Bluetooth pairing
-        install_apt_package("espeak")             # espeak installation for TTS
+        # install_apt_package("espeak")           # Removed espeak installation
         
         print('Downloading YOLO files for object recognition')
         subprocess.check_call(["sudo", "wget", "https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg"])
@@ -404,6 +407,7 @@ def main():
         install_package("webrtcvad")
         install_package("requests")
         install_package("pybluez")  # For Bluetooth
+        install_package("piper-tts")  # Install Piper TTS
         subprocess.check_call(["sudo", "wget", "https://raw.githubusercontent.com/garagesteve1155/chatgpt_robot/main/main.py"])
         setup_waveshare_audio_hat()  # Install and setup the audio HAT
     
@@ -423,3 +427,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
